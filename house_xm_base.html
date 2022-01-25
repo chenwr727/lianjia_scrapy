@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+
+<head>
+    <meta charset="utf-8">
+    <title>厦门房价</title>
+</head>
+
+<body style="height: 100%; margin: 0">
+    <div id="container" style="height: 100%"></div>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/echarts/dist/extension/dataTool.min.js"></script>
+    <script type="text/javascript"
+        src="http://api.map.baidu.com/api?v=3.0&ak=L63VWcHGC2mb8Vbz9jGmGaseNUtfmDeO"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/echarts/dist/extension/bmap.min.js"></script>
+    <script type="text/javascript">
+        function getPieces(items) {
+            var len = items.length;
+            var pieces = []
+            for (var i = 0; i < len; i++) {
+                if (i == 0) {
+                    pieces.push({
+                        lt: items[i], label: items[i] + "万以下"
+                    })
+                }
+                if (i == len - 1) {
+                    pieces.push({
+                        gte: items[i], label: items[i] + "万以上"
+                    })
+                }
+                else {
+                    pieces.push({
+                        gte: items[i], lt: items[i + 1], label: items[i] + "-" + items[i + 1] + "万"
+                    })
+                }
+            }
+            return pieces;
+        }
+
+        // 值写入
+
+        var prices = [100, 200, 300, 400, 500, 800];
+        var price_pieces = getPieces(prices);
+        var room_pieces = [6, 5, 4, 3, 2, 1];
+
+        var price_selected = price_pieces;
+        var room_selected = room_pieces;
+
+        var dom = document.getElementById("container");
+        var myChart = echarts.init(dom);
+        var app = {};
+        option = null;
+        app.title = '散点图与百度地图扩展';
+
+        myChart.setOption(option = {
+            animation: false,
+            bmap: {
+                center: [118.088441, 24.521069],
+                zoom: 13,
+                roam: true
+            },
+            tooltip: {
+                enterable: true,
+                trigger: 'item',
+                hideDelay: 1000,
+                formatter: function (obj) {
+                    var value = obj.value;
+                    var str = '<ul>';
+                    for (i = 0; i < value[5].length; i++) {
+                        var flag = false;
+                        var house_info = value[5][i].split("\t");
+                        var price = parseFloat(house_info[2].slice(0, -1));
+                        var room = house_info[0].split("室")[0];
+                        if (room.length == 1 && "12345".includes(room)){
+                            room = parseInt(room);
+                        }else{
+                            room = 6;
+                        }
+                        for (var obj of price_selected) {
+                            if (obj.hasOwnProperty("gte") && obj.hasOwnProperty("lt")) {
+                                if (price >= obj["gte"] && price < obj["lt"]) {
+                                    flag = true;
+                                    break
+                                }
+                            }
+                            else if (!obj.hasOwnProperty("gte") && obj.hasOwnProperty("lt")) {
+                                if (price < obj["lt"]) {
+                                    flag = true;
+                                    break
+                                }
+                            }
+                            else {
+                                if (price >= obj["gte"]) {
+                                    flag = true;
+                                    break
+                                }
+                            }
+                        }
+                        if (flag == false) {
+                            continue
+                        }
+                        flag = false;
+                        for (var obj of room_selected) {
+                            if (obj == room) {
+                                flag = true;
+                                break
+                            }
+                        }
+                        if (flag == false) {
+                            continue
+                        }
+                        str += '<li><a href="' + value[6][i] + '" target="_blank">' + value[5][i] + '</a></li>';
+                    }
+                    str += '</ul>';
+                    return '<div style="border-bottom: 1px solid rgba(255,0,0,.3); font-size: 16px;padding-bottom: 7px;margin-bottom: 7px">' +
+                        value[2] + '</div>' + str
+                },
+            },
+            visualMap: [
+                {
+                    id: "room",
+                    type: "piecewise",
+                    dimension: 4,
+                    pieces: [
+                        { value: 6, label: '其他' },
+                        { value: 5, label: '五室' },
+                        { value: 4, label: '四室' },
+                        { value: 3, label: '三室' },
+                        { value: 2, label: '二室' },
+                        { value: 1, label: '一室' },
+                    ],
+                    orient: 'horizontal',
+                    top: 20,
+                },
+                {
+                    id: "price",
+                    type: "piecewise",
+                    dimension: 3,
+                    pieces: price_pieces,
+                    orient: 'horizontal',
+                    top: 'top',
+                    inRange: {
+                        color: ['yellow', 'red'],
+                        symbolSize: [5, 20]
+                    }
+                },
+            ],
+            series: [
+                {
+                    name: '均价(元/平方米)',
+                    type: 'scatter',
+                    coordinateSystem: 'bmap',
+                    data: points,
+                },
+            ]
+        });
+        if (!app.inNode) {
+            // 添加百度地图插件
+            var bmap = myChart.getModel().getComponent('bmap').getBMap();
+            bmap.addControl(new BMap.MapTypeControl());
+        };
+        myChart.setOption(option, true);
+        myChart.on('datarangeselected', function (params) {
+            if (params.visualMapId == "price") {
+                price_selected = [];
+                for (var index in params.selected) {
+                    if (params.selected[index] == true) {
+                        price_selected.push(price_pieces[index]);
+                    }
+                }
+            } else {
+                room_selected = [];
+                for (var index in params.selected) {
+                    if (params.selected[index] == true) {
+                        room_selected.push(room_pieces[index]);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
