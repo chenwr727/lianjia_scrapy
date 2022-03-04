@@ -121,10 +121,12 @@ class House:
 
     def writeHtml(self):
         def change(x):
-            room = x.split("室")[0]
-            if len(room) == 1 and room in "12345":
-                return int(room)
-            return 6
+            if isinstance(x, str):
+                room = x.split("室")[0]
+                if len(room) == 1 and room in "12345":
+                    return int(room)
+                return 6
+            return 0
 
         df = pd.read_sql(crud.getHouseStatement(self.db), self.db.bind)
         columns = ["经纬度", "小区", "面积", "总价", "均价", "房屋户型", "网址"]
