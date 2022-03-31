@@ -1,10 +1,8 @@
-import codecs
 import re
 import time
 
 import bs4
 import demjson
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
@@ -37,7 +35,6 @@ class House:
         for page in range(1, max_page + 1):
             self.getUrlsByPage(page)
             time.sleep(SLEEP_TIME)
-        self.writeHtml()
         self.db.close()
 
     def initSession(self):
@@ -63,7 +60,10 @@ class House:
         urls = [div.find("a")["href"] for div in divs]
         LOGGER.info(f"Successfully get {len(urls)} urls by page {page}")
         for url in urls:
-            self.getHouseByUrl(url)
+            try:
+                self.getHouseByUrl(url)
+            except Exception as e:
+                LOGGER.error(f"Failed to get house by url {url}: {e}")
             time.sleep(SLEEP_TIME)
 
     def getContentByTags(self, tags: bs4.element.ResultSet):
@@ -118,51 +118,6 @@ class House:
         )
         crud.createHouse(self.db, house_base)
         LOGGER.info("Successfully added house")
-
-    def writeHtml(self):
-        def change(x):
-            if isinstance(x, str):
-                room = x.split("室")[0]
-                if len(room) == 1 and room in "12345":
-                    return int(room)
-                return 6
-            return 0
-
-        df = pd.read_sql(crud.getHouseStatement(self.db), self.db.bind)
-        columns = ["经纬度", "小区", "面积", "总价", "均价", "房屋户型", "网址"]
-        df.columns = columns
-        df.sort_values(by="总价", ascending=False, inplace=True)
-        df["经度"] = df["经纬度"].map(lambda x: x.split(",")[0])
-        df["纬度"] = df["经纬度"].map(lambda x: x.split(",")[1])
-        df["地址"] = df[["经度", "纬度", "小区"]].apply(
-            lambda x: "%s,%s,'%s'" % (x["经度"], x["纬度"], x["小区"]), axis=1
-        )
-        df["信息"] = df[["房屋户型", "面积", "总价"]].apply(
-            lambda x: "%s\t%s平米\t%s万" % (x["房屋户型"], x["面积"], x["总价"]), axis=1
-        )
-        df_group = (
-            df.groupby("地址")
-            .agg(
-                {
-                    "信息": lambda x: ",".join(map(lambda y: "'%s'" % y, x)),
-                    "网址": lambda x: ",".join(map(lambda y: "'%s'" % y, x)),
-                }
-            )
-            .reset_index()
-        )
-        df_house = pd.merge(left=df[["地址", "总价", "房屋户型"]], right=df_group, on="地址")
-        df_house["房屋户型"] = df_house["房屋户型"].map(change)
-        price_df = df_house.apply(
-            lambda x: "[%s,%s,%s,[%s],[%s]]"
-            % (x["地址"], x["总价"], x["房屋户型"], x["信息"], x["网址"]),
-            axis=1,
-        )
-        data_str = "var points = [" + ",".join(price_df) + "];\n"
-        with open("house_xm_base.html", "r", encoding="utf-8") as f:
-            s = f.read()
-        with codecs.open("house_xm.html", "w", "utf-8") as f:
-            f.write(s.replace("// 值写入", data_str))
-        LOGGER.info("Successfully writed html")
 
 
 def main(max_page: int = 100):

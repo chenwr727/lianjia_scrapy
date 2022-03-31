@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>厦门房价</title>
+    <title>{{ house_date }}</title>
 </head>
 
 <body style="height: 100%; margin: 0">
@@ -37,7 +37,7 @@
             return pieces;
         }
 
-        // 值写入
+        var points = {{ house_data|safe }};
 
         var prices = [100, 200, 300, 400, 500, 800];
         var price_pieces = getPieces(prices);

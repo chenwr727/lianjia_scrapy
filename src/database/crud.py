@@ -1,7 +1,6 @@
-import datetime
-
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
+
 from . import models, schemas
 
 
@@ -21,11 +20,12 @@ def createHouse(db: Session, house: schemas.HouseBase):
     return None
 
 
-def getHouseStatement(db: Session):
+def getHouseStatement(db: Session, date_str: str):
     """get house statement
 
     Args:
         db (Session): database session
+        date_str (str): date
 
     Returns:
         SQLAlchemy Selectable
@@ -40,10 +40,7 @@ def getHouseStatement(db: Session):
             models.House.base_content["房屋户型"],
             models.House.url,
         )
-        .filter(
-            func.strftime("%Y-%m-%d", models.House.create_time)
-            == func.strftime("%Y-%m-%d", datetime.datetime.now())
-        )
+        .filter(func.strftime("%Y-%m-%d", models.House.create_time) == date_str)
         .distinct()
         .statement
     )
