@@ -6,7 +6,7 @@
 
 ## 介绍
 链家二手房爬虫，echarts可视化
-![demo](./images/xm.png)
+![demo](./images/xm.gif)
 
 > python爬虫
 
@@ -23,10 +23,10 @@ pip install -r requirements.txt
 
 > 获取数据
 ```shell
-python house_data.py
+python main.py
 ```
 
 > Web
 ```shell
-python house_data.py
+python app.py
 ```
