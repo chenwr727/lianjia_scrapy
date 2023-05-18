@@ -29,4 +29,4 @@ async def read_item(date_str: str, request: Request, db: Session = Depends(get_d
 
 
 if __name__ == "__main__":
-    uvicorn.run(app="app:app", host="0.0.0.0", port=5000, reload=True, debug=True)
+    uvicorn.run(app="app:app", host="0.0.0.0", port=5000)

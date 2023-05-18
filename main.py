@@ -2,7 +2,7 @@ import re
 import time
 
 import bs4
-import demjson
+import demjson3
 import requests
 from bs4 import BeautifulSoup
 
@@ -92,7 +92,7 @@ class House:
         req = self.session.get(url)
         html = req.text
         sell_detail_str = re.findall("init\(([\s\S]*?)\);", html)[0]
-        sell_detail = demjson.decode(
+        sell_detail = demjson3.decode(
             re.sub("\$\.getQuery\(.*\)", "''", sell_detail_str)
         )
 

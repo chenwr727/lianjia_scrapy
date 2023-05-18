@@ -13,7 +13,7 @@ def get_house_data(db, date_str):
         return 0
 
     sql = crud.getHouseStatement(db, date_str)
-    df = pd.read_sql(sql, db.bind)
+    df = pd.read_sql(sql, db.connection())
     if df.empty:
         return "[]"
     columns = ["经纬度", "小区", "面积", "总价", "均价", "房屋户型", "网址"]
